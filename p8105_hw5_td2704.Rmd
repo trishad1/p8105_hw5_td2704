@@ -8,9 +8,7 @@ output: github_document
 
 library(tidyverse)
 library(readxl)
-library(lubridate)
 library(dplyr)
-library(p8105.datasets)
 
 # knitr::opts_chunk$set(
 #   fig.width = 6,
@@ -35,4 +33,91 @@ scale_fill_discrete = scale_fill_viridis_d
 
 ## Problem 1
 
+```{r}
+
+homicide_data = read_csv("data/homicide-data.csv", na = c("", "Unknown"))
+homicide_data
+```
+
+The raw homicide data has `r nrow(homicide_data)` rows and `r length(colnames(homicide_data))` columns with variables `r colnames(homicide_data)`. \
+## ADD MORE DESCRIPTION
+
+
+```{r}
+
+homicide_data_modified = 
+  homicide_data %>%
+  mutate(
+    city_state = paste(city,state,sep = ", ")
+  )
+homicide_data_modified
+```
+
+```{r}
+homicide_counts_df = 
+  homicide_data_modified %>%
+  group_by(city_state, disposition) %>%
+  summarise(
+    homicides_by_disposition = n()
+  ) %>%
+  group_by(city_state) %>%
+  mutate(
+    total_num_homicides = sum(homicides_by_disposition)
+  ) %>%
+  filter(disposition == "Closed without arrest" | disposition == "Open/No arrest") %>%
+  group_by(city_state) %>%
+  mutate(
+    num_unsolved_homicides = sum(homicides_by_disposition)
+  ) %>%
+  select(city_state, total_num_homicides, num_unsolved_homicides) %>%
+  distinct(city_state, total_num_homicides, num_unsolved_homicides)
+
+homicide_counts_df
+```
+
+For Baltimore, MD: 
+```{r}
+baltimore_data = 
+  homicide_counts_df %>%
+  filter(city_state == "Baltimore, MD")
+
+baltimore_prop_test = 
+  prop.test(
+    x = pull(baltimore_data, num_unsolved_homicides),
+    n = pull(baltimore_data, total_num_homicides)
+    )
+
+baltimore_prop_test
+
+baltimore_prop_test %>%
+  broom::tidy() %>%
+  select(estimate, conf.low, conf.high)
+  
+```
+Let's make what we did for Baltimore, MD into a function so that we can apply this across all cities in our df.
+
+```{r}
+
+prop_test_city_function = function(city) {
+  city_data = 
+    homicide_counts_df %>%
+    filter(city_state == city)
+  
+  city_prop_test = 
+    prop.test(
+      x = pull(city_data, num_unsolved_homicides),
+      n = pull(city_data, total_num_homicides)
+    )
+  
+  return(city_prop_test)
+}
+
+```
+
+Apply this function to all cities in homicide_counts_df.
+```{r}
+
+homicide_counts_df
+
+```
 
