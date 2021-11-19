@@ -20,13 +20,13 @@ library(dplyr)
 
 ```{r}
 
-theme_set(theme_minimal() + theme(legend.position = "bottom"))
-options(
-  ggplot2.continuous.colour = "viridis",
-  ggplot2.continuous.fill = "viridis"
-)
-scale_colour_discrete = scale_color_viridis_d
-scale_fill_discrete = scale_fill_viridis_d
+# theme_set(theme_minimal() + theme(legend.position = "bottom"))
+# options(
+#   ggplot2.continuous.colour = "viridis",
+#   ggplot2.continuous.fill = "viridis"
+# )
+# scale_colour_discrete = scale_color_viridis_d
+# scale_fill_discrete = scale_fill_viridis_d
 
 ```
 
@@ -143,5 +143,45 @@ test_on_all_cities_df %>%
   ylab("Proportion estimate") +
   ggtitle("Proportion of unsolved homicides by city")
 ```
+
+## Problem 2
+
+```{r, message=FALSE}
+
+experiment_df = 
+  tibble(
+    files = list.files("data/zip_data/")
+    ) %>%
+  mutate(
+    read_data = purrr::map(str_c("data/zip_data/",files),read_csv)
+  ) %>%
+  unnest(cols = read_data) %>%
+  mutate(
+    subject = substr(files,1,6),
+    arm = substr(files,1,3)
+  ) %>%
+  relocate(subject, arm)
+
+experiment_df
+
+```
+
+Now let's create a spaghetti plot showing observations on each subject over time.
+
+```{r}
+experiment_df %>%
+  pivot_longer(
+    week_1:week_8,
+    names_to = "week_number",
+    values_to = "observations"
+  ) %>%
+  ggplot(aes(x=week_number,y=observations)) +
+  geom_line(aes(group=subject,color=arm)) +
+  ggtitle("Observations over weeks for subjects from control and experimental arm")
+```
+
+As we can see by the spaghetti plots above, grouped by control and experimental arms, the observations for subjects from the experimental arm increased over the weeks while it seems as though observations for subjects from the control arm stay roughly the same over time.
+
+
 
 
