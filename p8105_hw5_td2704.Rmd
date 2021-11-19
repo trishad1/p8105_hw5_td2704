@@ -117,7 +117,31 @@ prop_test_city_function = function(city) {
 Apply this function to all cities in homicide_counts_df.
 ```{r}
 
-homicide_counts_df
+test_on_all_cities_df = 
+  homicide_counts_df %>%
+  mutate(
+    test_results = map(city_state, prop_test_city_function),
+    tidy_results = map(test_results, broom::tidy)
+  ) %>%
+  select(city_state, tidy_results) %>%
+  unnest(tidy_results) %>%
+  select(city_state, estimate, conf.low, conf.high)
+
+test_on_all_cities_df
 
 ```
+
+Now that we have our proportion estimates and CIs for each city, let's plot them. 
+
+```{r}
+test_on_all_cities_df %>%
+  ggplot(aes(x=fct_reorder(city_state, desc(estimate)), y=estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=conf.low,ymax=conf.high)) +
+  theme(axis.text.x = element_text(angle=90, vjust = 0.5, hjust = 1)) +
+  xlab("City, State") +
+  ylab("Proportion estimate") +
+  ggtitle("Proportion of unsolved homicides by city")
+```
+
 
